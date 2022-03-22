@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29519.181
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Config", "Config", "{6BDAE5C1-D308-42EF-8B1C-60964D58A384}"
+ProjectSection(SolutionItems) = preProject
+	CodeAnalysis.ruleset = CodeAnalysis.ruleset
+	global.json = global.json
+	..\CHANGELOG.md = ..\CHANGELOG.md
+	..\README.md = ..\README.md
+	FunFair.props = FunFair.props
+EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Credfeto.Mediatr.Cmd", "Credfeto.Mediatr.Cmd\Credfeto.Mediatr.Cmd.csproj", "{2011BE92-332D-4C02-ACCC-2DCBB89720CA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Credfeto.Mediatr.Background.Services", "Credfeto.Mediatr.Background.Services\Credfeto.Mediatr.Background.Services.csproj", "{C059DAB8-8AF2-4FF9-B29F-51F91DA804CF}"
+EndProject
+Global
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2011BE92-332D-4C02-ACCC-2DCBB89720CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2011BE92-332D-4C02-ACCC-2DCBB89720CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2011BE92-332D-4C02-ACCC-2DCBB89720CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2011BE92-332D-4C02-ACCC-2DCBB89720CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C059DAB8-8AF2-4FF9-B29F-51F91DA804CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C059DAB8-8AF2-4FF9-B29F-51F91DA804CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C059DAB8-8AF2-4FF9-B29F-51F91DA804CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C059DAB8-8AF2-4FF9-B29F-51F91DA804CF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+EndGlobal
