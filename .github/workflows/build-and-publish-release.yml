@@ -1,0 +1,112 @@
+name: .NET Core [Release]
+
+on:
+  push:
+     branches:
+       - 'release/*'
+       - 'hotfix/*'
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    env:
+      OCTOPUS_DEPLOY_PACKAGE: ${{ secrets.OCTOPUS_DEPLOY_PACKAGE }}
+      OCTOPUS_DEPLOY_PACKAGE_ZIP: ${{ secrets.OCTOPUS_DEPLOY_PACKAGE_ZIP }}
+      OCTOPUS_PROJECT: ${{ secrets.OCTOPUS_PROJECT }}
+      OCTOPUS_CHANNEL: ${{ secrets.OCTOPUS_RELEASE_CHANNEL }}
+      OCTOPUS_DEPLOY_TO: ${{ secrets.OCTOPUS_DEPLOYTO_RELEASE }}
+      OCTOPUS_SERVER: ${{ secrets.OCTOPUS_SERVER }}
+      OCTOPUS_API_KEY: ${{ secrets.OCTOPUS_API_KEY }}
+      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      NUGET_FEED: ${{ secrets.NUGET_FEED }}
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Fetch tags and master
+      run: |
+        git fetch --tags
+        echo REF: $GITHUB_REF
+        echo SHA: $GITHUB_SHA
+        echo GIT_BRANCH=$GITHUB_REF >> $GITHUB_ENV
+        git branch --remote
+    - name: Determine .net core version
+      uses: credfeto/action-dotnet-version-detect@v1.2.0
+    - name: Setup .NET Core (Old)
+      uses: actions/setup-dotnet@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        dotnet-version: 5.0.403
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    - name: Enable dotnet tools
+      run: dotnet new tool-manifest
+    - name: Install Build Version Tool
+      run: dotnet tool install --local FunFair.BuildVersion
+    - name: Install Multi-Push Tool
+      run: dotnet tool install --local Credfeto.Package.Push
+    - name: Install Changelog Tool
+      run: dotnet tool install --local Credfeto.Changelog.Cmd
+    - if: ${{ env.OCTOPUS_DEPLOY_PACKAGE != '' }}
+      name: install Octopus Deploy CLI
+      uses: OctopusDeploy/install-octocli@v1.1.10
+      with:
+        version: 7.4.2
+    - name: Set Define Build Version
+      run: dotnet buildversion --BuildNumber $GITHUB_RUN_NUMBER
+    - name: Create Release Notes
+      run: dotnet changelog --changelog CHANGELOG.md --extract RELEASE_NOTES.md --version ${{ env.BUILD_VERSION }}
+    - id: release-notes
+      uses: juliangruber/read-file-action@v1
+      with:
+        path: RELEASE_NOTES.md
+    - name: Build with dotnet
+      working-directory: ./src
+      run: dotnet build --configuration Release /p:Version=${{ env.BUILD_VERSION }}
+
+    ## NUGET PACKAGES
+    - if: ${{ env.NUGET_API_KEY != '' }}
+      name: Pack tool
+      working-directory: ./src
+      run: dotnet pack --configuration Release /p:Version=${{ env.BUILD_VERSION }} --no-restore --output ../dist
+      env:
+        ReleaseNotes: ${{ steps.release-notes.outputs.content }}
+    - if: ${{ env.NUGET_API_KEY != '' }}
+      name: Publish Packages to Nuget
+      run: dotnet pushpackages -folder dist --api-key ${{ env.NUGET_API_KEY }} --source ${{ env.NUGET_FEED }}
+
+    ## OCTOPUS PACKAGES
+    - if: ${{ env.OCTOPUS_DEPLOY_PACKAGE != '' }}
+      name: Pack Packages for Octopus
+      working-directory: ./src/${{ env.OCTOPUS_DEPLOY_PACKAGE }}
+      run: dotnet publish --configuration Release /p:Version=${{ env.BUILD_VERSION }}  --no-restore --output ../server-dist
+    - if: ${{ env.OCTOPUS_DEPLOY_PACKAGE != '' }}
+      name: Pack Packages for Octopus
+      working-directory: ./src/server-dist
+      run: zip -9r ../../${{ env.OCTOPUS_DEPLOY_PACKAGE }}.${{ env.BUILD_VERSION }}.zip .
+    - if: ${{ env.OCTOPUS_DEPLOY_PACKAGE != '' }}
+      name: Push package to octopus 
+      run: octo push --package *.zip  --server="${{ env.OCTOPUS_SERVER }}" --apiKey="${{ env.OCTOPUS_API_KEY}}" --enableServiceMessages --debug --overwrite-mode=IgnoreIfExists    
+    - if: ${{ steps.check_files.outputs.FILES_EXIST == 'true' && env.OCTOPUS_DEPLOY_PACKAGE != '' && env.OCTOPUS_CHANNEL != '' }}
+      name: Deploy 
+      run: octo create-release --project="${{ env.OCTOPUS_PROJECT }}" --version="${{env.BUILD_VERSION}}" --channel="${{ env.OCTOPUS_CHANNEL }}" --package="${{ env.OCTOPUS_DEPLOY_PACKAGE_ZIP }}:${{env.BUILD_VERSION}}" --deployTo="${{ env.OCTOPUS_DEPLOY_TO }}" --server="${{ secrets.OCTOPUS_SERVER }}" --apiKey="${{ secrets.OCTOPUS_API_KEY}}" --enableServiceMessages --debug  --releaseNotesFile="RELEASE_NOTES.md"
+
+    # Create Github Release      
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1.1.4
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ env.BUILD_VERSION }}
+        release_name: Release ${{ env.BUILD_VERSION }}
+        body_path: RELEASE_NOTES.md
+        draft: false
+        prerelease: false

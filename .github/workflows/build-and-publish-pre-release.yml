@@ -1,0 +1,116 @@
+name: .NET Core [Pre-Release]
+
+on:
+  push:
+    paths:
+      - 'src/**/*'
+      - '.github/workflows/build*.yml'
+    branches-ignore:
+     - 'release/*'
+     - 'hotfix/*'
+    pull_request:
+     - opened
+     - edited
+     - synchronize
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    env:
+      OCTOPUS_DEPLOY_PACKAGE: ${{ secrets.OCTOPUS_DEPLOY_PACKAGE }}
+      OCTOPUS_DEPLOY_PACKAGE_ZIP: ${{ secrets.OCTOPUS_DEPLOY_PACKAGE_ZIP }}
+      OCTOPUS_PROJECT: ${{ secrets.OCTOPUS_PROJECT }}
+      OCTOPUS_CHANNEL: ${{ secrets.OCTOPUS_PRERELEASE_CHANNEL }}
+      OCTOPUS_DEPLOY_TO: ${{ secrets.OCTOPUS_DEPLOYTO_PRERELEASE }}
+      OCTOPUS_SERVER: ${{ secrets.OCTOPUS_SERVER }}
+      OCTOPUS_API_KEY: ${{ secrets.OCTOPUS_API_KEY }}
+      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      NUGET_FEED: ${{ secrets.NUGET_FEED }}
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Fetch tags and master
+      run: |
+        git fetch --tags
+        echo REF: $GITHUB_REF
+        echo SHA: $GITHUB_SHA
+        echo GIT_BRANCH=$GITHUB_REF >> $GITHUB_ENV
+        git branch --remote
+    - name: Check file existence
+      id: check_files
+      working-directory: ./src
+      run: |
+        if [[ -f global.json && $(compgen -G "*.sln") && $(compgen -G "**/*.csproj") ]]; then echo '::set-output name=FILES_EXIST::true'; else echo '::set-output name=FILES_EXIST::false'; fi
+        if [[ -f global.json && $(compgen -G "*.sln") && $(compgen -G "**/*.csproj") ]]; then echo 'Exists: true'; else echo 'Exists: false'; fi
+    - if: ${{ steps.check_files.outputs.FILES_EXIST == 'true' }}
+      name: Determine .net core version
+      uses: credfeto/action-dotnet-version-detect@v1.2.0
+    - if: ${{ steps.check_files.outputs.FILES_EXIST == 'true' }}
+      name: Setup .NET Core
+      uses: actions/setup-dotnet@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    - if: ${{ steps.check_files.outputs.FILES_EXIST == 'true' }}
+      name: Enable dotnet tools
+      run: dotnet new tool-manifest
+    - if: ${{ steps.check_files.outputs.FILES_EXIST == 'true' }}
+      name: Install Build Version Tool
+      run: dotnet tool install --local FunFair.BuildVersion
+    - if: ${{ steps.check_files.outputs.FILES_EXIST == 'true' }}
+      name: Install Multi-Push Tool
+      run: dotnet tool install --local Credfeto.Package.Push
+    - if: ${{ steps.check_files.outputs.FILES_EXIST == 'true' }}
+      name: Set Define Build Version
+      run: dotnet buildversion --BuildNumber $GITHUB_RUN_NUMBER
+    - if: ${{ steps.check_files.outputs.FILES_EXIST == 'true' }}
+      name: Install Changelog Tool
+      run: dotnet tool install --local Credfeto.Changelog.Cmd
+    - if: ${{ steps.check_files.outputs.FILES_EXIST == 'true' && env.OCTOPUS_DEPLOY_PACKAGE != '' }}
+      name: install Octopus Deploy CLI
+      uses: OctopusDeploy/install-octocli@v1.1.10
+      with:
+        version: 7.4.2
+    - if: ${{ steps.check_files.outputs.FILES_EXIST == 'true' }}
+      name: Create Release Notes
+      run: dotnet changelog --changelog CHANGELOG.md --extract RELEASE_NOTES.md --version ${{ env.BUILD_VERSION }}
+    - if: ${{ steps.check_files.outputs.FILES_EXIST == 'true' }}
+      id: release-notes
+      uses: juliangruber/read-file-action@v1
+      with:
+        path: RELEASE_NOTES.md
+    - if: ${{ steps.check_files.outputs.FILES_EXIST == 'true' }}
+      name: Build with dotnet
+      working-directory: ./src
+      run: dotnet build --configuration Release /p:Version=${{ env.BUILD_VERSION }}
+
+    ## NUGET PACKAGES
+    - if: ${{ steps.check_files.outputs.FILES_EXIST == 'true' && env.NUGET_API_KEY != '' }}
+      name: Pack tool
+      working-directory: ./src
+      run: dotnet pack --configuration Release /p:Version=${{ env.BUILD_VERSION }} --no-restore --output ../dist
+      env:
+        ReleaseNotes: ${{ steps.release-notes.outputs.content }}
+    - if: ${{ steps.check_files.outputs.FILES_EXIST == 'true' && env.NUGET_API_KEY != '' }}
+      name: Publish Packages to Nuget
+      run: dotnet pushpackages -folder dist --api-key ${{ env.NUGET_API_KEY }} --source ${{ env.NUGET_FEED }}
+
+    ## OCTOPUS PACKAGES
+    - if: ${{ steps.check_files.outputs.FILES_EXIST == 'true' && env.OCTOPUS_DEPLOY_PACKAGE != '' }}
+      name: Pack Packages for Octopus
+      working-directory: ./src/${{ env.OCTOPUS_DEPLOY_PACKAGE }}
+      run: dotnet publish --no-restore -warnaserror -p:PublishSingleFile=true --configuration:Release -r:linux-x64 --self-contained:true -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version=${{ env.BUILD_VERSION }} -p:IncludeNativeLibrariesForSelfExtract=false -p:SolutionDir=..\\ --output ../server-dist
+    - if: ${{ env.OCTOPUS_DEPLOY_PACKAGE != '' }}
+      name: Zip Packages for Octopus
+      working-directory: ./src/server-dist
+      run: zip -9r ../../${{ env.OCTOPUS_DEPLOY_PACKAGE_ZIP }}.${{ env.BUILD_VERSION }}.zip .
+    - if: ${{ steps.check_files.outputs.FILES_EXIST == 'true' && env.OCTOPUS_DEPLOY_PACKAGE != '' }}
+      name: Push package to Octopus 
+      run: octo push --package *.zip  --server="${{ env.OCTOPUS_SERVER }}" --apiKey="${{ env.OCTOPUS_API_KEY}}" --enableServiceMessages --debug --overwrite-mode=IgnoreIfExists    
+    - if: ${{ steps.check_files.outputs.FILES_EXIST == 'true' && env.OCTOPUS_DEPLOY_PACKAGE != '' && env.OCTOPUS_CHANNEL != '' && env.GIT_BRANCH == 'refs/heads/master' }}
+      name: Deploy 
+      run: octo create-release --project="${{ env.OCTOPUS_PROJECT }}" --version="${{env.BUILD_VERSION}}" --channel="${{ env.OCTOPUS_CHANNEL }}" --package="${{ env.OCTOPUS_DEPLOY_PACKAGE_ZIP }}:${{env.BUILD_VERSION}}" --deployTo="${{ env.OCTOPUS_DEPLOY_TO }}" --server="${{ secrets.OCTOPUS_SERVER }}" --apiKey="${{ secrets.OCTOPUS_API_KEY}}" --enableServiceMessages --debug  --releaseNotesFile="RELEASE_NOTES.md"

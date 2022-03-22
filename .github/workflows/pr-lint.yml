@@ -1,0 +1,166 @@
+name: PR Lint
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review, unlocked]
+    branches:
+      - master
+
+jobs:
+  info:
+    if: ${{ endsWith(github.repository , '-template') }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          sudo chown -R $USER:$USER $GITHUB_WORKSPACE
+      - run: |
+          echo "Branch: ${{ github.head_ref }}"
+          echo "Base Branch: ${{ github.base_ref }}"
+          echo "Repo: ${{ github.repository }}"
+          echo "Owner: ${{ github.repository_owner }}"
+      - uses: colpal/actions-clean@v1
+        if: ${{ always() }} # To ensure this step runs even when earlier steps fail
+
+  include-JIRA-ticket:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          sudo chown -R $USER:$USER $GITHUB_WORKSPACE
+      - if: ${{ !endsWith(github.repository , '-template') && !startsWith(github.head_ref, 'release/') && !startsWith(github.head_ref, 'hotfix/') }}
+        uses: seferov/pr-lint-action@v1.1.2
+        with:
+          title-regex: '^\[FF\-\d*?\](:)?(\ )'
+          error-message: 'Add Jira Ticket ID to your title'
+      - uses: colpal/actions-clean@v1
+        if: ${{ always() }} # To ensure this step runs even when earlier steps fail
+
+  include-changelog-entry:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          sudo chown -R $USER:$USER $GITHUB_WORKSPACE
+      - if: ${{ github.actor != 'dependabot[bot]' || endsWith(github.repository , '-template') }}
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - if: ${{ github.actor != 'dependabot[bot]' || endsWith(github.repository , '-template') }}
+        uses: Zomzog/changelog-checker@v1.2.0
+        with:
+          fileName: CHANGELOG.md
+          noChangelogLabel: Changelog Not Required
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: colpal/actions-clean@v1
+        if: ${{ always() }} # To ensure this step runs even when earlier steps fail
+
+  change-log-entry-is-in-unreleased:
+    if: github.event.pull_request.draft == false
+    # As LibGit2Sharp doesn't work on 20.04
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          sudo chown -R $USER:$USER $GITHUB_WORKSPACE
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: credfeto/action-dotnet-version-detect@v1.2.0
+      - uses: actions/setup-dotnet@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Enable dotnet tools
+        run: dotnet new tool-manifest
+      - name: Install Changelog tool
+        run: dotnet tool install --local Credfeto.ChangeLog.Cmd
+      - name: Check Changelog
+        run: dotnet changelog --changelog CHANGELOG.md --check-insert "origin/${{ github.base_ref }}"
+      - uses: colpal/actions-clean@v1
+        if: ${{ always() }} # To ensure this step runs even when earlier steps fail
+
+  does-not-contain-secrets:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          sudo chown -R $USER:$USER $GITHUB_WORKSPACE
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: zricethezav/gitleaks-action@v1.6.0
+        with:
+          config-path: .gitleaks.toml
+      - uses: colpal/actions-clean@v1
+        if: ${{ always() }} # To ensure this step runs even when earlier steps fail
+
+  has-no-merge-conflicts:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          sudo chown -R $USER:$USER $GITHUB_WORKSPACE
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: olivernybroe/action-conflict-finder@v3.0
+      - uses: colpal/actions-clean@v1
+        if: ${{ always() }} # To ensure this step runs even when earlier steps fail
+
+  has-no-file-or-folder-case-sensitivity-issues:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          sudo chown -R $USER:$USER $GITHUB_WORKSPACE
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: credfeto/action-case-checker@v1.2.0
+      - uses: colpal/actions-clean@v1
+        if: ${{ always() }} # To ensure this step runs even when earlier steps fail
+
+  no-ignored-files:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          sudo chown -R $USER:$USER $GITHUB_WORKSPACE
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: credfeto/action-no-ignored-files@v1.0.0
+      - uses: colpal/actions-clean@v1
+        if: ${{ always() }} # To ensure this step runs even when earlier steps fail
+        
+  lint-code:
+    if: ${{ github.event.pull_request.draft == false && ( !startsWith(github.head_ref, 'release/') && !startsWith(github.head_ref, 'hotfix/') ) }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          sudo chown -R $USER:$USER $GITHUB_WORKSPACE
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: github/super-linter@v4.9.0
+        env:
+          DEFAULT_BRANCH: master
+          GITHUB_TOKEN: ${{ secrets.SOURCE_PUSH_TOKEN }}
+          MULTI_STATUS: true
+          VALIDATE_ALL_CODEBASE: false
+          VALIDATE_BASH: true
+          VALIDATE_CSS: true
+          VALIDATE_DOCKERFILE: true
+          VALIDATE_DOCKERFILE_HADOLINT: true
+          VALIDATE_JSON: true
+          VALIDATE_MD: true
+          VALIDATE_PYTHON: true
+          VALIDATE_PYTHON_PYLINT: true
+          VALIDATE_POWERSHELL: true
+          VALIDATE_SHELL_SHFMT: true
+          VALIDATE_TYPESCRIPT_ES: true
+          VALIDATE_XML: true
+          VALIDATE_YAML: true
+      - uses: colpal/actions-clean@v1
+        if: ${{ always() }} # To ensure this step runs even when earlier steps fail
+
