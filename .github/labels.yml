@@ -114,3 +114,11 @@
    color: "ff0000"
    description: "This pull request should not be merged yey"
 
+ - name: "Background.Services"
+   color: "96f7d2"
+   description: "Changes in Credfeto.Mediatr.Background.Services project"
+
+ - name: "Cmd"
+   color: "96f7d2"
+   description: "Changes in Credfeto.Mediatr.Cmd project"
+
