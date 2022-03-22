@@ -1,2 +1,2 @@
-# cs-template
+# mediatr-test
 C# Template
