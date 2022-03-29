@@ -1,77 +1,77 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
-  <PropertyGroup>
-    <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
-    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(MSBuildProjectName).xml</DocumentationFile>
-    <Features>strict;flow-analysis</Features>
-    <GenerateNeutralResourcesLanguageAttribute>true</GenerateNeutralResourcesLanguageAttribute>
-    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
-    <ImplicitUsings>disable</ImplicitUsings>
-    <IncludeOpenAPIAnalyzers>true</IncludeOpenAPIAnalyzers>
-    <IsPackable>false</IsPackable>
-    <IsPublishable>true</IsPublishable>
-    <LangVersion>latest</LangVersion>
-    <NoWarn/>
-    <Nullable>enable</Nullable>
-    <OutputType>Exe</OutputType>
-    <RuntimeIdentifiers>win-x64;win10-x64;win81-x64;osx.10.12-x64;linux-x64</RuntimeIdentifiers>
-    <TargetFramework>net6.0</TargetFramework>
-    <TieredCompilation>true</TieredCompilation>
-    <TreatSpecificWarningsAsErrors/>
-    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-    <ValidateExecutableReferencesMatchSelfContained>true</ValidateExecutableReferencesMatchSelfContained>
-    <WarningsAsErrors/>
-  </PropertyGroup>
-  <PropertyGroup>
-    <ServerGarbageCollection>false</ServerGarbageCollection>
-  </PropertyGroup>
-  <PropertyGroup>
-    <AnalysisLevel>latest</AnalysisLevel>
-    <AnalysisMode>AllEnabledByDefault</AnalysisMode>
-    <CodeAnalysisRuleSet>$(SolutionDir)\CodeAnalysis.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
-    <EnableNETAnalyzers>true</EnableNETAnalyzers>
-    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-  </PropertyGroup>
-  <PropertyGroup>
-    <DefineConstants Condition="$(IsProduction)!='True'">$(DefineConstants);SWAGGER_ENABLED</DefineConstants>
-    <DefineConstants Condition="$(IsProduction)=='True'">$(DefineConstants);HAS_CONTENT</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup>
-    <DefineConstants Condition="$(IsProduction)=='True'">$(DefineConstants);SINGLE_FILE_PUBLISH</DefineConstants>
-    <DefineConstants>$(DefineConstants);DISABLE_COUNTERS</DefineConstants>
-  </PropertyGroup>
-  <ItemGroup>
-    <TrimmerRootAssembly Include="System.Web.HttpUtility"/>
-    <TrimmerRootAssembly Include="System.Diagnostics.FileVersionInfo"/>
-    <TrimmerRootAssembly Include="System.Resources.Writer"/>
-    <TrimmerRootAssembly Include="System.Runtime"/>
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="MediatR" Version="10.0.1"/>
-    <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="10.0.1"/>
-    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="6.0.0"/>
-    <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="6.0.0"/>
-    <PackageReference Include="Serilog.Enrichers.Environment" Version="2.2.0"/>
-    <PackageReference Include="Serilog.Enrichers.Process" Version="2.0.2"/>
-    <PackageReference Include="Serilog.Enrichers.Thread" Version="3.1.0"/>
-    <PackageReference Include="Serilog.Extensions.Logging" Version="3.1.0"/>
-    <PackageReference Include="Serilog.Sinks.Console" Version="4.0.1"/>
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="AsyncFixer" Version="1.5.1" PrivateAssets="All"/>
-    <PackageReference Include="FunFair.CodeAnalysis" Version="5.8.1.1203" PrivateAssets="All"/>
-    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.1.46" PrivateAssets="All"/>
-    <PackageReference Include="NSubstitute.Analyzers.CSharp" Version="1.0.15" PrivateAssets="All"/>
-    <PackageReference Include="Philips.CodeAnalysis.DuplicateCodeAnalyzer" Version="1.1.6" PrivateAssets="All"/>
-    <PackageReference Include="Roslynator.Analyzers" Version="4.0.2" PrivateAssets="All"/>
-    <PackageReference Include="SonarAnalyzer.CSharp" Version="8.36.1.44192" PrivateAssets="All"/>
-    <PackageReference Include="SourceLink.Create.CommandLine" Version="2.8.3" PrivateAssets="All"/>
-    <PackageReference Include="ToStringWithoutOverrideAnalyzer" Version="0.6.0" PrivateAssets="All"/>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Workers"/>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Credfeto.Mediatr.Background.Services\Credfeto.Mediatr.Background.Services.csproj"/>
-  </ItemGroup>
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+    <PropertyGroup>
+        <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
+        <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(MSBuildProjectName).xml</DocumentationFile>
+        <Features>strict;flow-analysis</Features>
+        <GenerateNeutralResourcesLanguageAttribute>true</GenerateNeutralResourcesLanguageAttribute>
+        <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <IncludeOpenAPIAnalyzers>true</IncludeOpenAPIAnalyzers>
+        <IsPackable>false</IsPackable>
+        <IsPublishable>true</IsPublishable>
+        <LangVersion>latest</LangVersion>
+        <NoWarn />
+        <Nullable>enable</Nullable>
+        <OutputType>Exe</OutputType>
+        <RuntimeIdentifiers>win-x64;win10-x64;win81-x64;osx.10.12-x64;linux-x64</RuntimeIdentifiers>
+        <TargetFramework>net6.0</TargetFramework>
+        <TieredCompilation>true</TieredCompilation>
+        <TreatSpecificWarningsAsErrors />
+        <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+        <ValidateExecutableReferencesMatchSelfContained>true</ValidateExecutableReferencesMatchSelfContained>
+        <WarningsAsErrors />
+    </PropertyGroup>
+    <PropertyGroup>
+        <ServerGarbageCollection>false</ServerGarbageCollection>
+    </PropertyGroup>
+    <PropertyGroup>
+        <AnalysisLevel>latest</AnalysisLevel>
+        <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+        <CodeAnalysisRuleSet>$(SolutionDir)\CodeAnalysis.ruleset</CodeAnalysisRuleSet>
+        <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
+        <EnableNETAnalyzers>true</EnableNETAnalyzers>
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    </PropertyGroup>
+    <PropertyGroup>
+        <DefineConstants Condition="$(IsProduction)!='True'">$(DefineConstants);SWAGGER_ENABLED</DefineConstants>
+        <DefineConstants Condition="$(IsProduction)=='True'">$(DefineConstants);HAS_CONTENT</DefineConstants>
+    </PropertyGroup>
+    <PropertyGroup>
+        <DefineConstants Condition="$(IsProduction)=='True'">$(DefineConstants);SINGLE_FILE_PUBLISH</DefineConstants>
+        <DefineConstants>$(DefineConstants);DISABLE_COUNTERS</DefineConstants>
+    </PropertyGroup>
+    <ItemGroup>
+        <TrimmerRootAssembly Include="System.Web.HttpUtility" />
+        <TrimmerRootAssembly Include="System.Diagnostics.FileVersionInfo" />
+        <TrimmerRootAssembly Include="System.Resources.Writer" />
+        <TrimmerRootAssembly Include="System.Runtime" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="MediatR" Version="10.0.1" />
+        <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="10.0.1" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="6.0.0" />
+        <PackageReference Include="Serilog.Enrichers.Environment" Version="2.2.0" />
+        <PackageReference Include="Serilog.Enrichers.Process" Version="2.0.2" />
+        <PackageReference Include="Serilog.Enrichers.Thread" Version="3.1.0" />
+        <PackageReference Include="Serilog.Extensions.Logging" Version="3.1.0" />
+        <PackageReference Include="Serilog.Sinks.Console" Version="4.0.1" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="AsyncFixer" Version="1.5.1" PrivateAssets="All" />
+        <PackageReference Include="FunFair.CodeAnalysis" Version="5.8.1.1203" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.1.46" PrivateAssets="All" />
+        <PackageReference Include="NSubstitute.Analyzers.CSharp" Version="1.0.15" PrivateAssets="All" />
+        <PackageReference Include="Philips.CodeAnalysis.DuplicateCodeAnalyzer" Version="1.1.6" PrivateAssets="All" />
+        <PackageReference Include="Roslynator.Analyzers" Version="4.1.0" PrivateAssets="All" />
+        <PackageReference Include="SonarAnalyzer.CSharp" Version="8.36.1.44192" PrivateAssets="All" />
+        <PackageReference Include="SourceLink.Create.CommandLine" Version="2.8.3" PrivateAssets="All" />
+        <PackageReference Include="ToStringWithoutOverrideAnalyzer" Version="0.6.0" PrivateAssets="All" />
+    </ItemGroup>
+    <ItemGroup>
+        <Folder Include="Workers" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Credfeto.Mediatr.Background.Services\Credfeto.Mediatr.Background.Services.csproj" />
+    </ItemGroup>
 </Project>

@@ -12,6 +12,7 @@ Please ADD ALL Changes to the UNRELASED SECTION and not a specific release
 - FF-3881 - Updated DotNet SDK to 6.0.101
 - FF-3881 - Updated DotNet SDK to 6.0.102
 - FF-3881 - Updated DotNet SDK to 6.0.201
+- FF-1429 - Updated Roslynator.Analyzers to 4.1.0
 ### Removed
 ### Deployment Changes
 
